@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# Source the management script
+. "$SNAP/bin/management"
+
+DATABASE_URL="$(database_url)"
+HOST_URL="$(host_url)"
+HOST_PORT="$(host_port)"
+
+DATABASE_URL=$DATABASE_URL DATA_DIR=/home/asciinema HOST_URL=$HOST_URL HOST_PORT=$HOST_PORT PORT=4000 ADMIN_BIND_ALL=1 "$SNAP/srv/asciinema/bin/server"

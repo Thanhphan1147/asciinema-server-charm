@@ -1,0 +1,34 @@
+type: charm
+base: ubuntu@24.04
+build-base: ubuntu@24.04
+platforms:
+  amd64:
+
+parts:
+  charm:
+    build-packages:
+      - build-essential
+      - python3-dev
+      - pkg-config
+      - libffi-dev
+      - libssl-dev
+      - git
+    build-snaps:
+      - rustup
+    override-build: |
+      rustup default stable
+      craftctl default
+
+name: asciinema-server
+title: Asciinema server
+summary: Asciinema server
+description: Asciinema server
+charm-libs:
+  - lib: data_platform_libs.data_interfaces
+    version: "0"
+
+requires:
+  database:
+    interface: postgresql_client
+    limit: 1
+    optional: false

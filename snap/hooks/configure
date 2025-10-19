@@ -1,0 +1,28 @@
+#!/bin/sh
+
+# Source the management script
+. "$SNAP/bin/management"
+
+handle_database_url_config()
+{
+    value="$(database_url)"
+    set_database_url "$value"
+    snapctl restart asciinema-server
+}
+handle_database_url_config
+
+handle_host_url_config()
+{
+    value="$(host_url)"
+    set_host_url "$value"
+    snapctl restart asciinema-server
+}
+handle_host_url_config
+
+handle_host_port_config()
+{
+    value="$(host_port)"
+    host_port "$value"
+    snapctl restart asciinema-server
+}
+handle_host_port_config

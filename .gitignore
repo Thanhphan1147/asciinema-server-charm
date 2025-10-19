@@ -1,0 +1,4 @@
+*.charm
+.vscode/
+**/*.snap
+.venv/

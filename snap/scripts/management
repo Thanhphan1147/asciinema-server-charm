@@ -1,0 +1,47 @@
+#!/bin/sh
+
+DEFAULT_DATABASE_URL="postgresql://localhost@localhost"
+database_url()
+{
+    value="$(snapctl get database.url)"
+    if [ -z "$value" ]; then
+        value="$DEFAULT_DATABASE_URL"
+        set_database_url $value
+    fi
+    echo "$value"
+}
+set_database_url()
+{
+    snapctl set database.url="$1"
+}
+
+DEFAULT_HOST_URL="127.0.0.1"
+host_url()
+{
+    value="$(snapctl get host.url)"
+    if [ -z "$value" ]; then
+        value="$DEFAULT_HOST_URL"
+        set_host_url $value
+    fi
+    echo "$value"
+}
+set_host_url()
+{
+    snapctl set host.url="$1"
+}
+
+DEFAULT_HOST_PORT=80
+host_port()
+{
+    value="$(snapctl get host.port)"
+    if [ -z "$value" ]; then
+        value="$DEFAULT_DATADIR"
+        set_host_port $value
+    fi
+    echo "$value"
+}
+set_host_port()
+{
+    snapctl set host.port="$1"
+}
+

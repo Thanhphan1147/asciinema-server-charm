@@ -1,0 +1,122 @@
+base: core24
+version: '0.1' # just for humans, typically '1.2+git' or '1.3.2'
+platforms:
+  amd64:
+
+parts:
+  server:
+    plugin: dump
+    source: https://github.com/asciinema/asciinema-server
+    source-type: git
+    build-packages:
+      - build-essential
+      - git
+      - nodejs
+      - npm
+      - unzip
+      - autoconf 
+      - m4 
+      - libwxgtk3.2-dev 
+      - libwxgtk-webview3.2-dev 
+      - libgl1-mesa-dev 
+      - libglu1-mesa-dev 
+      - libpng-dev 
+      - libssh-dev 
+      - unixodbc-dev 
+      - xsltproc 
+      - fop 
+      - libxml2-utils 
+      - libncurses-dev 
+      - openjdk-11-jdk
+    build-environment:
+      - ERL_FLAGS: "+JPperf true"
+      - MIX_ENV: prod
+    build-snaps:
+      - rustup
+    stage-packages:
+      - libstdc++6
+      - bash
+      - ca-certificates
+      - librsvg2-bin
+      - pngquant
+    override-build: |
+      curl -o asdf.tar.gz https://github.com/asdf-vm/asdf/releases/download/v0.18.0/asdf-v0.18.0-linux-amd64.tar.gz -L
+      tar xzvf asdf.tar.gz -C /usr/bin/
+      asdf --version
+
+      asdf plugin add erlang https://github.com/asdf-vm/asdf-erlang.git
+      asdf install erlang 26.2.5.7
+      asdf set erlang 26.2.5.7
+
+      asdf plugin add elixir https://github.com/asdf-vm/asdf-elixir.git
+      asdf install elixir 1.18.2
+      asdf set elixir 1.18.2
+
+      rustup default stable
+
+      mkdir -p opt/app
+      cp -R native opt/app/native/
+      (cd opt/app/native/vt_nif; cargo build -r)
+      export PATH=$PATH:$HOME/.asdf/shims
+      
+      cp mix.* opt/app
+      (cd opt/app; mix do deps.get --only prod, deps.compile)
+      
+      cp -R assets opt/app/assets/
+      (cd opt/app/assets && npm install)
+      
+      mkdir -p opt/app/config
+      cp config/config.exs opt/app/config/
+      cp config/prod.exs opt/app/config/
+      (cd opt/app; mix deps.clean mime --build)
+      
+      cp -R priv opt/app/priv/
+      (cd opt/app; mix assets.deploy)
+
+      cp config/*.exs opt/app/config/
+      cp -R lib opt/app/lib/
+      (cd opt/app; mix deps.compile sentry --force)
+
+      cp -R rel opt/app/rel/
+      (cd opt/app; mix release)
+      
+      cp .iex.exs opt/app/_build/prod/rel/asciinema/
+      
+      craftctl default
+
+    organize:
+      "opt/app/_build/prod/rel/asciinema": "srv/asciinema"
+    stage:
+      - "srv/asciinema"
+
+  hooks:
+    plugin: dump
+    source: hooks/
+    organize:
+      '*': snap/hooks/
+  scripts:
+    plugin: dump
+    source: scripts/
+    organize:
+      '*': /bin/
+    override-prime: |
+      # Fix permissions
+      chmod +rx $SNAPCRAFT_STAGE/bin/*
+
+      snapcraftctl prime
+apps:
+  asciinema-server:
+    command: bin/wrapper
+    daemon: simple
+    install-mode: disable
+    restart-delay: 10s
+    plugs:
+      - network-bind
+      - home
+
+name: asciinema-server
+title: Asciinema server snap
+summary: Asciinema server snap
+description: Asciinema server snap
+grade: stable
+confinement: strict
