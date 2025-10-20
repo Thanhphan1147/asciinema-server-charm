@@ -49,7 +49,8 @@ class AsciinemaCharm(ops.CharmBase):
         self.unit.status = ops.ActiveStatus()
 
     def _update_server_configuration(self) -> None:
-        server = snap.add("asciinema-server")
+        self.unit.status = ops.MaintenanceStatus("Configuring the asciinema-server snap.")
+        server = snap.add("asciinema-server", channel="latest/stable")
         server.connect("home")
         ASCIINEMA_DATA_DIR.mkdir(exist_ok=True, mode=755)
 
