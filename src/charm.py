@@ -35,6 +35,8 @@ class AsciinemaCharm(ops.CharmBase):
         )
         self.framework.observe(self.database.on.database_created, self._reconcile)
         self.framework.observe(self.database.on.endpoints_changed, self._reconcile)
+        self.framework.observe(self.server_ingress.on.ready, self._reconcile)
+        self.framework.observe(self.server_ingress.on.removed, self._reconcile)
 
         self.framework.observe(self.on.config_changed, self._reconcile)
 
@@ -50,7 +52,7 @@ class AsciinemaCharm(ops.CharmBase):
 
     def _update_server_configuration(self) -> None:
         self.unit.status = ops.MaintenanceStatus("Configuring the asciinema-server snap.")
-        server = snap.add("asciinema-server", channel="latest/stable")
+        server = snap.ensure("asciinema-server", state="present", channel="latest/stable")
         server.connect("home")
         ASCIINEMA_DATA_DIR.mkdir(exist_ok=True, mode=755)
 
@@ -65,13 +67,18 @@ class AsciinemaCharm(ops.CharmBase):
                 port = endpoint.split(":")[1]
                 database_url = f"postgresql://{user}:{password}@{host}:{port}/{self.app.name}"
         host_url = None
-        network_binding = self.model.get_binding("juju-info")
-        if (
-            network_binding is not None
-            and (bind_address := network_binding.network.bind_address) is not None
-        ):
-            host_url = str(bind_address)
-        server.set(config={"database.url": database_url, "host.url": host_url})
+        host_port = None
+        if proxied_endpoints := self.server_ingress.get_proxied_endpoints():
+            host_url = proxied_endpoints[0]
+            host_port = 443
+        else:
+            network_binding = self.model.get_binding("juju-info")
+            if (
+                network_binding is not None
+                and (bind_address := network_binding.network.bind_address) is not None
+            ):
+                host_url = str(bind_address)
+        server.set(config={"database.url": database_url, "host.url": host_url, "host.port": host_port})
         server.start()
 
 
