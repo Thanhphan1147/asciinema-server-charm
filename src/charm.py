@@ -1,5 +1,7 @@
+#!/usr/bin/env python3
 """Asciinema server charm."""
 
+import logging
 import typing
 from pathlib import Path
 
@@ -11,6 +13,8 @@ from charms.data_platform_libs.v0.data_interfaces import (
 
 ASCIINEMA_SERVER_SERVICE_FILE = Path("/etc/systemd/system/asciinema_server.service")
 DATABASE_RELATION = "database"
+ASCIINEMA_DATA_DIR = Path("/home/asciinema")
+logger = logging.getLogger()
 
 
 class AsciinemaCharm(ops.CharmBase):
@@ -45,19 +49,22 @@ class AsciinemaCharm(ops.CharmBase):
         self.unit.status = ops.ActiveStatus()
 
     def _update_server_configuration(self) -> None:
-        server = snap.ensure("asciinema-server", str(snap.SnapState.Present))
-        server.connect(":home")
+        server = snap.add("asciinema-server")
+        server.connect("home")
+        ASCIINEMA_DATA_DIR.mkdir(exist_ok=True, mode=755)
 
         database_url = None
-        if relation := self.model.get_relation(self.database.relation_name):
-            endpoint = relation.data[self.app].get("endpoints")
+        if relation := self.model.get_relation(DATABASE_RELATION):
+            relation_data = self.database.fetch_relation_data()[relation.id]
+            logger.info("Set config: %r", relation_data)
+            endpoint = relation_data.get("endpoints")
+            logger.info("Set config: %r", endpoint)
             if endpoint is not None:
-                user = (relation.data[self.app].get("username"),)
-                password = (relation.data[self.app].get("password"),)
-                host = (endpoint.split(":")[0],)
-                port = (endpoint.split(":")[1],)
-                database_url = ((f"postgresql://{user}:{password}@{host}:{port}/{self.app.name}"),)
-
+                user = relation_data.get("username")
+                password = relation_data.get("password")
+                host = endpoint.split(":")[0]
+                port = endpoint.split(":")[1]
+                database_url = f"postgresql://{user}:{password}@{host}:{port}/{self.app.name}"
         host_url = None
         network_binding = self.model.get_binding("juju-info")
         if (

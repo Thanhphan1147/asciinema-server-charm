@@ -32,3 +32,6 @@ requires:
     interface: postgresql_client
     limit: 1
     optional: false
+
+assumes:
+  - juju >= 3.3
