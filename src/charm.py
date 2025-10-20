@@ -56,9 +56,7 @@ class AsciinemaCharm(ops.CharmBase):
         database_url = None
         if relation := self.model.get_relation(DATABASE_RELATION):
             relation_data = self.database.fetch_relation_data()[relation.id]
-            logger.info("Set config: %r", relation_data)
             endpoint = relation_data.get("endpoints")
-            logger.info("Set config: %r", endpoint)
             if endpoint is not None:
                 user = relation_data.get("username")
                 password = relation_data.get("password")
