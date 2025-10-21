@@ -15,6 +15,8 @@ parts:
       - git
     build-snaps:
       - rustup
+    stage-snaps:
+      - asciinema-server
     override-build: |
       rustup default stable
       craftctl default
