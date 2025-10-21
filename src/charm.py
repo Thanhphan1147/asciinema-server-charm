@@ -10,6 +10,7 @@ from charmlibs import snap
 from charms.data_platform_libs.v0.data_interfaces import (
     DatabaseRequires,
 )
+from charms.haproxy.v1.haproxy_route import HaproxyRouteRequirer
 
 ASCIINEMA_SERVER_SERVICE_FILE = Path("/etc/systemd/system/asciinema_server.service")
 DATABASE_RELATION = "database"
@@ -32,6 +33,14 @@ class AsciinemaCharm(ops.CharmBase):
             relation_name=DATABASE_RELATION,
             database_name=self.app.name,
             extra_user_roles="SUPERUSER",
+        )
+        self.server_ingress = HaproxyRouteRequirer(
+            self,
+            relation_name="server",
+            service=self.app.name,
+            ports=[4000],
+            hostname="asciinema-server.internal",
+            path_rewrite_expressions=[]
         )
         self.framework.observe(self.database.on.database_created, self._reconcile)
         self.framework.observe(self.database.on.endpoints_changed, self._reconcile)
