@@ -11,6 +11,7 @@ from charms.data_platform_libs.v0.data_interfaces import (
     DatabaseRequires,
 )
 from charms.haproxy.v1.haproxy_route import HaproxyRouteRequirer
+from charms.traefik_k8s.v2.ingress import IngressPerAppRequirer
 
 ASCIINEMA_SERVER_SERVICE_FILE = Path("/etc/systemd/system/asciinema_server.service")
 DATABASE_RELATION = "database"
@@ -40,8 +41,9 @@ class AsciinemaCharm(ops.CharmBase):
             service=self.app.name,
             ports=[4000],
             hostname="asciinema-server.internal",
-            path_rewrite_expressions=[]
+            path_rewrite_expressions=[],
         )
+        self.admin_ingress = IngressPerAppRequirer(self, relation_name="admin", port=4002)
         self.framework.observe(self.database.on.database_created, self._reconcile)
         self.framework.observe(self.database.on.endpoints_changed, self._reconcile)
         self.framework.observe(self.server_ingress.on.ready, self._reconcile)
@@ -87,7 +89,9 @@ class AsciinemaCharm(ops.CharmBase):
                 and (bind_address := network_binding.network.bind_address) is not None
             ):
                 host_url = str(bind_address)
-        server.set(config={"database.url": database_url, "host.url": host_url, "host.port": host_port})
+        server.set(
+            config={"database.url": database_url, "host.url": host_url, "host.port": host_port}
+        )
         server.start()
 
 

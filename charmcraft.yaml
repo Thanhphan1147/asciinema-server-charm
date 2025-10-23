@@ -30,6 +30,8 @@ charm-libs:
     version: "0"
   - lib: haproxy.haproxy_route
     version: "1"
+  - lib: traefik-k8s.ingress
+    version: "2"
 
 requires:
   database:
@@ -38,6 +40,8 @@ requires:
     optional: false
   server:
     interface: haproxy-route
+  admin:
+    interface: ingress
 
 assumes:
   - juju >= 3.3
