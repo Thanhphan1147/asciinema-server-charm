@@ -43,7 +43,11 @@ class AsciinemaCharm(ops.CharmBase):
             hostname="asciinema-server.internal",
             path_rewrite_expressions=[],
         )
-        self.admin_ingress = IngressPerAppRequirer(self, relation_name="admin", port=4002)
+        self.admin_ingress = IngressPerAppRequirer(
+            self,
+            relation_name="admin",
+            port=4002,
+        )
         self.framework.observe(self.database.on.database_created, self._reconcile)
         self.framework.observe(self.database.on.endpoints_changed, self._reconcile)
         self.framework.observe(self.server_ingress.on.ready, self._reconcile)
