@@ -38,8 +38,6 @@ requires:
     optional: false
   server:
     interface: ingress
-  admin:
-    interface: haproxy-route
 
 assumes:
   - juju >= 3.3
