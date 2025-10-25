@@ -28,6 +28,8 @@ description: Asciinema server
 charm-libs:
   - lib: data_platform_libs.data_interfaces
     version: "0"
+  - lib: haproxy.haproxy_route
+    version: "1"
   - lib: traefik-k8s.ingress
     version: "2"
 
@@ -38,6 +40,8 @@ requires:
     optional: false
   server:
     interface: ingress
+  admin:
+    interface: haproxy-route
 
 assumes:
   - juju >= 3.3

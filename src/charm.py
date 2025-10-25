@@ -10,6 +10,7 @@ from charmlibs import snap
 from charms.data_platform_libs.v0.data_interfaces import (
     DatabaseRequires,
 )
+from charms.haproxy.v1.haproxy_route import HaproxyRouteRequirer
 from charms.traefik_k8s.v2.ingress import IngressPerAppRequirer
 
 ASCIINEMA_SERVER_SERVICE_FILE = Path("/etc/systemd/system/asciinema_server.service")
@@ -39,10 +40,18 @@ class AsciinemaCharm(ops.CharmBase):
             relation_name="server",
             port=4000,
         )
+        self.admin_ingress = HaproxyRouteRequirer(
+            self,
+            relation_name="admin",
+            service=f"{self.app.name}-admin",
+            ports=[4002],
+            paths=["/admin","/live","/css"],
+            hostname="asciinema-server.internal"
+        )
         self.framework.observe(self.database.on.database_created, self._reconcile)
         self.framework.observe(self.database.on.endpoints_changed, self._reconcile)
         self.framework.observe(self.server_ingress.on.ready, self._reconcile)
-        self.framework.observe(self.server_ingress.on.removed, self._reconcile)
+        self.framework.observe(self.server_ingress.on.revoked, self._reconcile)
 
         self.framework.observe(self.on.config_changed, self._reconcile)
 
