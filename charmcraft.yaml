@@ -39,9 +39,9 @@ requires:
     limit: 1
     optional: false
   server:
-    interface: ingress
-  admin:
     interface: haproxy-route
+  admin:
+    interface: ingress
 
 assumes:
   - juju >= 3.3
