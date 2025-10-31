@@ -28,6 +28,8 @@ description: Asciinema server
 charm-libs:
   - lib: data_platform_libs.data_interfaces
     version: "0"
+  - lib: haproxy.haproxy_route
+    version: "1"
   - lib: traefik-k8s.ingress
     version: "2"
 
@@ -36,6 +38,8 @@ requires:
     interface: postgresql_client
     limit: 1
     optional: false
+  server:
+    interface: haproxy-route
   admin:
     interface: ingress
 

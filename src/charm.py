@@ -10,6 +10,7 @@ from charmlibs import snap
 from charms.data_platform_libs.v0.data_interfaces import (
     DatabaseRequires,
 )
+from charms.haproxy.v1.haproxy_route import HaproxyRouteRequirer
 from charms.traefik_k8s.v2.ingress import IngressPerAppRequirer
 
 ASCIINEMA_SERVER_SERVICE_FILE = Path("/etc/systemd/system/asciinema_server.service")
@@ -33,6 +34,14 @@ class AsciinemaCharm(ops.CharmBase):
             relation_name=DATABASE_RELATION,
             database_name=self.app.name,
             extra_user_roles="SUPERUSER",
+        )
+        self.server_ingress = HaproxyRouteRequirer(
+            self,
+            relation_name="server",
+            service=f"{self.app.name}-server",
+            ports=[4002],
+            paths=["/admin","/live","/css"],
+            hostname="asciinema-server.internal"
         )
         self.admin_ingress = IngressPerAppRequirer(
             self,
