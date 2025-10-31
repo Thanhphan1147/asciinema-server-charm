@@ -35,23 +35,23 @@ class AsciinemaCharm(ops.CharmBase):
             database_name=self.app.name,
             extra_user_roles="SUPERUSER",
         )
-        self.server_ingress = HaproxyRouteRequirer(
+        self.server_ingress = IngressPerAppRequirer(
             self,
             relation_name="server",
-            service=f"{self.app.name}-server",
+            port=4000,
+        )
+        self.admin_ingress = HaproxyRouteRequirer(
+            self,
+            relation_name="admin",
+            service=f"{self.app.name}-admin",
             ports=[4002],
             paths=["/admin","/live","/css"],
             hostname="asciinema-server.internal"
         )
-        self.admin_ingress = IngressPerAppRequirer(
-            self,
-            relation_name="admin",
-            port=4002,
-        )
         self.framework.observe(self.database.on.database_created, self._reconcile)
         self.framework.observe(self.database.on.endpoints_changed, self._reconcile)
         self.framework.observe(self.server_ingress.on.ready, self._reconcile)
-        self.framework.observe(self.server_ingress.on.removed, self._reconcile)
+        self.framework.observe(self.server_ingress.on.revoked, self._reconcile)
 
         self.framework.observe(self.on.config_changed, self._reconcile)
 
@@ -83,8 +83,8 @@ class AsciinemaCharm(ops.CharmBase):
                 database_url = f"postgresql://{user}:{password}@{host}:{port}/{self.app.name}"
         host_url = None
         host_port = None
-        if proxied_endpoints := self.server_ingress.get_proxied_endpoints():
-            host_url = proxied_endpoints[0]
+        if self.server_ingress.url is not None:
+            host_url = self.server_ingress.url
             host_port = 443
         else:
             network_binding = self.model.get_binding("juju-info")
