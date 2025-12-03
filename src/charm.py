@@ -38,10 +38,10 @@ class AsciinemaCharm(ops.CharmBase):
         self.server_ingress = HaproxyRouteRequirer(
             self,
             relation_name="server",
-            service=self.app.name,
-            ports=[4000],
-            hostname="asciinema-server.internal",
-            path_rewrite_expressions=[],
+            service=f"{self.app.name}-server",
+            ports=[4002],
+            paths=["/admin","/live","/css"],
+            hostname="asciinema-server.internal"
         )
         self.admin_ingress = IngressPerAppRequirer(
             self,
