@@ -10,7 +10,6 @@ from charmlibs import snap
 from charms.data_platform_libs.v0.data_interfaces import (
     DatabaseRequires,
 )
-from charms.haproxy.v1.haproxy_route import HaproxyRouteRequirer
 from charms.traefik_k8s.v2.ingress import IngressPerAppRequirer
 
 ASCIINEMA_SERVER_SERVICE_FILE = Path("/etc/systemd/system/asciinema_server.service")
@@ -35,13 +34,10 @@ class AsciinemaCharm(ops.CharmBase):
             database_name=self.app.name,
             extra_user_roles="SUPERUSER",
         )
-        self.server_ingress = HaproxyRouteRequirer(
+        self.server_ingress = IngressPerAppRequirer(
             self,
             relation_name="server",
-            service=f"{self.app.name}-server",
-            ports=[4002],
-            paths=["/admin","/live","/css"],
-            hostname="asciinema-server.internal"
+            port=4000,
         )
         self.admin_ingress = IngressPerAppRequirer(
             self,
@@ -51,7 +47,7 @@ class AsciinemaCharm(ops.CharmBase):
         self.framework.observe(self.database.on.database_created, self._reconcile)
         self.framework.observe(self.database.on.endpoints_changed, self._reconcile)
         self.framework.observe(self.server_ingress.on.ready, self._reconcile)
-        self.framework.observe(self.server_ingress.on.removed, self._reconcile)
+        self.framework.observe(self.server_ingress.on.revoked, self._reconcile)
 
         self.framework.observe(self.on.config_changed, self._reconcile)
 
@@ -83,8 +79,8 @@ class AsciinemaCharm(ops.CharmBase):
                 database_url = f"postgresql://{user}:{password}@{host}:{port}/{self.app.name}"
         host_url = None
         host_port = None
-        if proxied_endpoints := self.server_ingress.get_proxied_endpoints():
-            host_url = proxied_endpoints[0]
+        if self.server_ingress.url is not None:
+            host_url = self.server_ingress.url
             host_port = 443
         else:
             network_binding = self.model.get_binding("juju-info")
